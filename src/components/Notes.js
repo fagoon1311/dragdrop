@@ -1,20 +1,23 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import Note from './Note'
 
 const Notes = ({notes=[], setNotes = () =>{}}) => {
 
     useEffect (()=>{
-        const savedNotes = []
+        const savedNotes = JSON.parse(localStorage.getItem('notes')) || []
         const updatedNotes = notes.map((note)=>{
-            const savedNote = null
-            if(savedNote) return {}
+            const savedNote = savedNotes.find((n)=> n.id === note.id)
+            if(savedNote) return {...note, position:savedNote.position}
             else {
                 const position = determineNewPosition()
                 return {...note, position}
             }
         })
         setNotes(updatedNotes)
-    }, [notes.length])
+        localStorage.setItem('notes', JSON.stringify(updatedNotes))
+    }, [notes.length]);
+
+    const noteRefs = useRef([]) // This will store reference to each of our note.
 
     const determineNewPosition = () =>{
         const maxX = window.innerWidth - 320
@@ -28,7 +31,12 @@ const Notes = ({notes=[], setNotes = () =>{}}) => {
   return (
     <div>
         {
-            notes.map((note) =>{ return <Note key={note.id} initialPosition={note.position} content={note.description}/>})
+            notes.map((note) =>{ return <Note 
+                key={note.id} 
+                initialPosition={note.position} 
+                content={note.description} 
+                ref = {noteRefs.current[note.id] ? noteRefs.current[note.id] : (noteRefs.current[note.id] = createRef())}
+                />})
         }
     </div>
   )
