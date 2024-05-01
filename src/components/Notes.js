@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, createRef } from 'react'
 import Note from './Note'
 
 const Notes = ({notes=[], setNotes = () =>{}}) => {
@@ -28,6 +28,43 @@ const Notes = ({notes=[], setNotes = () =>{}}) => {
         }
 
     }
+    
+    const handleDragStart = (note, e)=>{
+        const {id} = note
+        console.log(noteRefs)
+        const noteRef = noteRefs.current[id].current
+        const rect = noteRef.getBoundingClientRect()
+        console.log(rect)
+        const offsetX = e.clientX - rect.left
+        const offsetY = e.clientY - rect.top
+        const startPos = note
+
+        const handleMouseMove = (e) =>{
+            const newX = e.clientX - offsetX
+            const newY = e.clientY - offsetY
+
+            noteRef.style.left = `${newX}px`
+            noteRef.style.top = `${newY}px`
+
+        }
+        const handleMouseUp = () =>{
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+            const finalrect = noteRef.getBoundingClientRect()
+            const newPosition = {x:finalrect.left, y:finalrect.top}
+            updateNotePosition(id, newPosition)
+        }
+
+        const updateNotePosition = (id, newPosition) =>{
+            const updatedNotes = notes.map((note)=>note.id ===id?{...note, position:newPosition } : note)
+            setNotes(updatedNotes)
+        localStorage.setItem('notes', JSON.stringify(updatedNotes))
+        }
+
+        document.addEventListener('mousemove', handleMouseMove)
+        document.addEventListener('mouseup', handleMouseUp)
+
+    }
   return (
     <div>
         {
@@ -36,6 +73,7 @@ const Notes = ({notes=[], setNotes = () =>{}}) => {
                 initialPosition={note.position} 
                 content={note.description} 
                 ref = {noteRefs.current[note.id] ? noteRefs.current[note.id] : (noteRefs.current[note.id] = createRef())}
+                onMouseDown = {(e)=>handleDragStart(note, e)}
                 />})
         }
     </div>
